@@ -1,6 +1,10 @@
 .PHONY: all
 all:
 
+.PHONY: install
+install:
+	python -m pip install -U pip -r requirements.txt
+
 .PHONY: ci-check
 ci-check:
 	mypy -p plugin

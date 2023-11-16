@@ -6,9 +6,10 @@ Thumbs.db
 # Python
 *.py[cod]
 .mypy_cache/
-.venv-*/
-.venv/
+.ruff_cache/
 __pycache__/
 
 .venv-*/
 .venv/
+venv-*/
+venv/
