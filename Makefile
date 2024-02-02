@@ -8,12 +8,10 @@ install:
 .PHONY: ci-check
 ci-check:
 	mypy -p plugin
-	flake8 .
-	black --preview --check --diff .
-	isort --check --diff .
+	ruff check --diff .
+	ruff format --diff .
 
 .PHONY: ci-fix
 ci-fix:
-	autoflake --in-place .
-	black . --preview
-	isort .
+	ruff check --fix .
+	ruff format .
