@@ -31,6 +31,9 @@ jobs:
         os: ['ubuntu-latest']
         python-version: ['3.8']
 
+    env:
+      UV_SYSTEM_PYTHON: 1
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -47,5 +50,4 @@ jobs:
 
       - name: Do linting
         run: |
-          make UV_INSTALL_FLAGS="--system" \
-            install-dev ci-check
+          make install-dev ci-check
