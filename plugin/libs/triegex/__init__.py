@@ -37,7 +37,7 @@ class TriegexNode:
     def __delitem__(self, key):
         del self.children[key]
 
-    def to_regex(self):
+    def to_regex(self) -> str:
         """
         RECURSIVE IMPLEMENTATION FOR REFERENCE
         suffixes = [v.to_regex() for k, v in self.children.items()]
@@ -116,7 +116,7 @@ class Triegex(collections.MutableSet):
         else:
             current.children[word[-1]] = TriegexNode(word[-1], True)
 
-    def to_regex(self):
+    def to_regex(self) -> str:
         r"""
             Produce regular expression that will match each word in the
         internal trie.

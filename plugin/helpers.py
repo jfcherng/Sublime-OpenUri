@@ -70,14 +70,7 @@ def compile_uri_regex() -> tuple[Pattern[str] | None, tuple[str, ...]]:
         activated_schemes.append(scheme)
         uri_regexes.append(re.escape(scheme) + rf"(?:(?#{path_regex_name}))")
 
-    # fmt: off
-    regex: str = r"\b" + (
-        triegex.Triegex(*uri_regexes)
-        .to_regex()
-        .replace(r"\b", "")  # type: ignore
-        .replace(r"|~^(?#match nothing)", "")
-    )
-    # fmt: on
+    regex = r"\b" + (triegex.Triegex(*uri_regexes).to_regex().replace(r"\b", "").replace(r"|~^(?#match nothing)", ""))
 
     log("debug", f"Optimized URI matching regex (before expanding): {regex}")
 

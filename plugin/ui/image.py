@@ -5,8 +5,10 @@ import io
 import re
 from collections.abc import Sequence
 from functools import lru_cache
+from itertools import chain
 
 import sublime
+from more_itertools import grouper
 
 from ..libs import png
 from ..settings import get_setting
@@ -73,27 +75,29 @@ def change_png_bytes_color(img_bytes: bytes, rgba_code: str) -> bytes:
     if not re.match(r"#[0-9a-fA-F]{8}$", rgba_code):
         raise ValueError("Invalid RGBA color code: " + rgba_code)
 
-    def render_pixel(rgba_src: Sequence[int], rgba_dst: Sequence[int], invert_gray: bool = False) -> list[int]:
+    def render_pixel(
+        rgba_src: Sequence[int],  # length=4
+        rgba_dst: Sequence[int],  # length=4
+        invert_gray: bool = False,
+    ) -> tuple[int, int, int, int]:
         gray = calculate_gray(rgba_src)
         if invert_gray:
             gray = 0xFF - gray
 
         # ">> 8" is an approximation for "/ 0xFF" in following calculations
-        return [
+        return (
             int(rgba_dst[0] * gray) >> 8,
             int(rgba_dst[1] * gray) >> 8,
             int(rgba_dst[2] * gray) >> 8,
             int(rgba_dst[3] * rgba_src[3]) >> 8,
-        ]
+        )
 
     invert_gray = not is_img_light(img_bytes)  # invert for dark image to get a solid looking
     rgba_dst = [int(rgba_code[i : i + 2], 16) for i in range(1, 9, 2)]
 
     rows_dst: list[list[int]] = []
     for row_src in png.Reader(bytes=img_bytes).asRGBA()[2]:
-        row_dst: list[int] = []
-        for i in range(0, len(row_src), 4):
-            row_dst.extend(render_pixel(row_src[i : i + 4], rgba_dst, invert_gray))
+        row_dst = list(chain(*(render_pixel(rgba_src, rgba_dst, invert_gray) for rgba_src in grouper(row_src, 4))))
         rows_dst.append(row_dst)
 
     buf = io.BytesIO()
@@ -111,7 +115,7 @@ def calculate_gray(rgb: Sequence[int]) -> int:
 
     @return The gray scale.
     """
-    return int(rgb[0] * 38 + rgb[1] * 75 + rgb[2] * 15) >> 7
+    return (rgb[0] * 38 + rgb[1] * 75 + rgb[2] * 15) >> 7
 
 
 def is_img_light(img_bytes: bytes) -> bool:
@@ -123,12 +127,7 @@ def is_img_light(img_bytes: bytes) -> bool:
     @return True if image is light, False otherwise.
     """
     w, h, rows, _ = png.Reader(bytes=img_bytes).asRGBA()
-
-    gray_sum = 0
-    for row in rows:
-        for i in range(0, len(row), 4):
-            gray_sum += calculate_gray(row[i : i + 4])
-
+    gray_sum = sum(calculate_gray(rgba) for row in rows for rgba in grouper(row, 4))
     return (gray_sum >> 7) > w * h
 
 
@@ -138,18 +137,22 @@ def add_alpha_to_rgb(color_code: str) -> str:
 
     @param color_code The color code
 
-    @return The color code in the form of #RRGGBBAA
+    @return The color code in the form of #RRGGBBAA in lowercase
     """
-    if not color_code:
+    if not (rgb := color_code.lstrip("#")[:8]):
         return ""
 
-    rgb = color_code[1:9]  # strip "#" and possible extra chars
+    if len(rgb) == 8:
+        return f"#{rgb}".lower()
 
     # RGB to RRGGBB
     if len(rgb) == 3:
         rgb = rgb[0] * 2 + rgb[1] * 2 + rgb[2] * 2
 
-    return "#" + (rgb + "ff")[:8].lower()
+    if len(rgb) == 6:
+        return f"#{rgb[:6]}ff".lower()
+
+    raise ValueError(f"Invalid RGB/RGBA color code: {color_code}")
 
 
 @simple_decorator(add_alpha_to_rgb)
@@ -176,16 +179,16 @@ def color_code_to_rgba(color_code: str, region: sublime.Region) -> str:
 
             if color_code == "@scope_inverted":
                 # strip "#" and make color into RRGGBBAA int
-                rgba_int = int((color + "ff")[1:9], 16)
-                # invert RRGGBB, remain AA, strip "0x" prefix from hex and prepend 0s until 8 chars
-                return "#" + hex((~rgba_int & 0xFFFFFF00) | (rgba_int & 0xFF))[2:].zfill(8)
+                rgba_int = int(f"{color}ff"[1:9], 16)
+                # invert RRGGBB and remain AA, prepend 0s to hex until 8 chars RRGGBBAA
+                return f"#{(~rgba_int & 0xFFFFFF00) | (rgba_int & 0xFF):08x}"
         return ""
 
     # now color code must starts with "#"
     rgb = color_code[1:9]  # strip "#" and possible extra chars
 
     # RGB, RRGGBB, RRGGBBAA are legal
-    if len(rgb) in [3, 6, 8] and re.match(r"[0-9a-fA-F]+$", rgb):
+    if len(rgb) in {3, 6, 8} and re.match(r"[0-9a-fA-F]+$", rgb):
         return f"#{rgb}"
 
     return ""

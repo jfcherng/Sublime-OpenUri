@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable
-from typing import Any, List, Tuple, TypedDict, TypeVar, Union
+from typing import Any, Callable, List, Tuple, TypedDict, TypeVar, Union
 
 import sublime
 
