@@ -48,4 +48,4 @@ jobs:
       - name: Do linting
         run: |
           make UV_INSTALL_FLAGS="--system" \
-            install ci-check
+            install-dev ci-check
