@@ -1,5 +1,12 @@
 # OpenUri Changelog
 
+## 8.0.1
+
+Package Control v4 is required due to the use of `more-itertools` py38 dependency.
+
+- refactor: tidy codes
+- chore: add `more-itertools` as a dependency
+
 ## 8.0.0
 
 - refactor: tidy codes (ST>=4152)
