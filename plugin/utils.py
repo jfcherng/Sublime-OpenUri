@@ -6,6 +6,7 @@ from collections.abc import Callable, Generator, Iterable, Sequence
 from typing import Any, Pattern, cast, overload
 
 import sublime
+from more_itertools import first_true
 
 from .constants import VIEW_SETTING_TIMESTAMP_KEY
 from .types import RegionLike, T_AnyCallable
@@ -115,10 +116,7 @@ def view_find_all(
     """
 
     def expand(region: sublime.Region) -> sublime.Region:
-        return next(
-            filter(None, (view.expand_to_scope(region.a, selector) for selector in expand_selectors)),
-            region,
-        )
+        return first_true((view.expand_to_scope(region.a, selector) for selector in expand_selectors), region)  # type: ignore
 
     if isinstance(expand_selectors, str):
         expand_selectors = (expand_selectors,)
@@ -129,12 +127,8 @@ def view_find_all(
 
 @overload
 def view_last_typing_timestamp_val(view: sublime.View) -> float: ...
-
-
 @overload
 def view_last_typing_timestamp_val(view: sublime.View, timestamp_s: float) -> None: ...
-
-
 def view_last_typing_timestamp_val(view: sublime.View, timestamp_s: float | None = None) -> float | None:
     """
     @brief Set/Get the last timestamp (in sec) when "OUIB_uri_regions" is updated
@@ -177,12 +171,8 @@ def view_is_dirty_val(view: sublime.View, is_dirty: bool | None = None) -> bool 
 
 @overload
 def region_shift(region: sublime.Region, shift: int) -> sublime.Region: ...
-
-
 @overload
 def region_shift(region: int | list[int] | tuple[int, int], shift: int) -> tuple[int, int]: ...
-
-
 def region_shift(region: RegionLike, shift: int) -> tuple[int, int] | sublime.Region:
     """
     @brief Shift the region by given amount.
@@ -206,15 +196,11 @@ def region_expand(
     region: sublime.Region,
     expansion: int | list[int] | tuple[int, int],
 ) -> sublime.Region: ...
-
-
 @overload
 def region_expand(
     region: int | list[int] | tuple[int, int],
     expansion: int | list[int] | tuple[int, int],
 ) -> tuple[int, int]: ...
-
-
 def region_expand(
     region: RegionLike,
     expansion: int | list[int] | tuple[int, int],
