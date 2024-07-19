@@ -1,5 +1,10 @@
 # OpenUri Changelog
 
+## 8.0.2
+
+- fix: wrong results after `undo` command
+- refactor: tidy codes
+
 ## 8.0.1
 
 Package Control v4 is required due to the use of `more-itertools` py38 dependency.
